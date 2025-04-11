@@ -1,0 +1,91 @@
+clc; clear; close all;
+
+dirname_head  = uigetdir();
+dirname_head  = dirname_head + "\";  
+files_head    = dir(dirname_head);
+file_num_head = length(files_head);
+name_suffix = 1;
+
+
+for i = 1:6
+    expr = ['data_' num2str(i) ' = [];'];
+    eval(expr);
+
+end
+
+
+for k = 3:8
+
+    filename_thick = files_head(k).name;
+    dirname  = dirname_head + filename_thick + "\" ;
+    files    = dir(dirname + "*.txt");
+    file_num = length(files);
+
+    for n = 1:file_num
+        filename_i = files(n).name;
+
+        M = readmatrix(dirname + filename_i);
+   
+
+        data_i = M(1:400, 2)';
+
+        expr = ['data_' num2str(name_suffix) ' = [data_' num2str(name_suffix) '; data_i];'];
+        eval(expr);
+    end
+    name_suffix = name_suffix + 1;
+end
+
+
+data_1 = data_1/100000 - 10;
+
+data_2 = data_2/100000 - 10;
+
+data_3 = data_3/100000 - 10;
+
+data_4 = data_4/100000 - 10;
+
+data_5 = data_5/100000 - 10;
+
+data_6 = data_6/100000 - 10;
+
+for i = 1:6
+
+    expr = ['x = data_' num2str(i) ';'];
+    eval(expr);
+
+    for j = 1:size(x, 1)
+        pos_trunc = find(x(j, :) == max(x(j, :)));
+        pos = pos_trunc(end);
+        x_new = [x(j, pos:end), linspace(x(j, end), x(j, end), pos-1)];
+
+        x(j, :) = x_new;
+    end
+
+    expr = ['data_' num2str(i) ' = x;'];
+    eval(expr);
+end
+
+
+for i = 1:6
+
+    expr = ['data_' num2str(i) '_log = [];'];
+    eval(expr);
+
+end
+
+
+for i = 1:6
+
+    expr = ['y' '='  'data'  '_' num2str(i) ';'    ];
+    eval(expr);
+    x = real(log10(y));
+
+        expr = ['data'  '_' num2str(i) '_log' '= x;'];
+    eval(expr);
+
+end
+
+plot(data_1_log(1:19,10))
+xlabel('Signals from different locations (12 mm)(3)', 'FontSize', 14);
+ylabel('Normalized Amplitude (log scale)', 'FontSize', 14);
+title('Signals from different locations (8 mm × 12mm) ', 'FontSize', 14);

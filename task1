@@ -1,0 +1,155 @@
+clc; clear; close all;
+
+dirname_head  = uigetdir();
+dirname_head  = dirname_head + "\";  
+files_head    = dir(dirname_head);
+file_num_head = length(files_head);
+name_suffix = 1;
+
+
+for i = 1:4
+    expr = ['data_' num2str(i) ' = [];'];
+    eval(expr);
+
+end
+
+
+for k = 3:6
+
+    filename_thick = files_head(k).name;
+    dirname  = dirname_head + filename_thick + "\" ;
+    files    = dir(dirname + "*.txt");
+    file_num = length(files);
+
+    for n = 1:file_num
+        filename_i = files(n).name;
+
+        M = readmatrix(dirname + filename_i);
+   
+
+        data_i = M(1:400, 2)';
+
+        expr = ['data_' num2str(name_suffix) ' = [data_' num2str(name_suffix) '; data_i];'];
+        eval(expr);
+    end
+    name_suffix = name_suffix + 1;
+end
+
+
+data_1 = data_1/100000 - 10;
+
+data_2 = data_2/100000 - 10;
+
+data_3 = data_3/100000 - 10;
+
+data_4 = data_4/100000 - 10;
+
+
+
+for i = 1:4
+
+    expr = ['x = data_' num2str(i) ';'];
+    eval(expr);
+
+    for j = 1:size(x, 1)
+        pos_trunc = find(x(j, :) == max(x(j, :)));
+        pos = pos_trunc(end);
+        x_new = [x(j, pos:end), linspace(x(j, end), x(j, end), pos-1)];
+
+        x(j, :) = x_new;
+    end
+
+    expr = ['data_' num2str(i) ' = x;'];
+    eval(expr);
+end
+
+
+for i = 1:4
+
+    expr = ['data_' num2str(i) '_log = [];'];
+    eval(expr);
+
+end
+
+
+for i = 1:4
+
+    expr = ['y' '='  'data'  '_' num2str(i) ';'    ];
+    eval(expr);
+    x = real(log10(y));
+
+        expr = ['data'  '_' num2str(i) '_log' '= x;'];
+    eval(expr);
+
+end
+
+
+for i = 1 : 4
+
+    expr = ['x = data'  '_' num2str(i) '_log' ];
+    eval(expr);
+    x_new = [];
+    for j = 1 : 8
+        x_new(j,:) = sum(x(5*(j-1)+1 : 5*j,:),1)/5;
+    end
+    expr = ['data'  '_' num2str(i) '_log_new = x_new' ];
+    eval(expr);
+end
+
+xlabel('Time（ms)');
+ylabel('Normalized Amplitude (log scale)');
+title('Comparison of PEC signals with different degrees of corrosion (8mm rebar)');
+%Corroded steel bars
+%Distance to sensor: 1 mm (unco)
+legend('1 mm lift-off(unco)', '1 mm lift-off(co)', '10 mm lift-off(unco)', '10 mm lift-off(co)' ,'20 mm lift-off(unco)', '20 mm lift-off(co)', '30 mm lift-off(unco)', '30 mm lift-off(co)');
+%grid on;
+%'20 mm rebar', '12 mm rebar', '10 mm rebar', '8 mm rebar'
+%'20 mm (1 rebar)', '20 mm (2 rebars)', '20 mm (3 rebars)', '12 mm (1 rebar)','12 mm (2 rebars)', '12 mm (3 rebars)','10 mm (1 rebar)', '10 mm (2 rebars)','10 mm (3 rebars)', '8 mm (1 rebar)', '8 mm (2 rebars)', '8 mm (3 rebars)'
+%'1 mm lift-off', '10 mm lift-off', '20 mm lift-off', '30 mm lift-off'
+%plot(data_1_log_new(1,:)')
+%hold on
+%plot(data_17_log_new')
+
+amplitude_reduction_ratios = zeros(4, 4); 
+
+for data_idx = 1:4
+    expr = ['current_data = data_' num2str(data_idx) '_log_new;'];
+    eval(expr);
+    
+    co1_bar_sum = sum(current_data(1, 50:100));  
+    co2_bar_sum = sum(current_data(2, 50:100));  
+    co3_bar_sum = sum(current_data(3, 50:100));                                
+    co4_bar_sum = sum(current_data(4, 50:100));  
+    unco1_bar_sum = sum(current_data(5, 50:100));  
+    unco2_bar_sum = sum(current_data(6, 50:100));
+    unco3_bar_sum = sum(current_data(7, 50:100)); 
+    unco4_bar_sum = sum(current_data(8, 50:100));
+    
+    amplitude_reduction_ratios(data_idx, 1) = abs(co1_bar_sum) / abs(unco1_bar_sum) * 100;
+    amplitude_reduction_ratios(data_idx, 2) = abs(co2_bar_sum) / abs(unco2_bar_sum) * 100;
+    amplitude_reduction_ratios(data_idx, 3) = abs(co3_bar_sum) / abs(unco3_bar_sum) * 100;
+    amplitude_reduction_ratios(data_idx, 4) = abs(co4_bar_sum) / abs(unco4_bar_sum) * 100;
+    % amplitude_reduction_ratios(data_idx, 4) = abs(midpoint_bar_sum - fourth_length_bar_sum) / abs(unco4_bar_sum) * 100;
+    % 
+    
+    
+    fprintf(' Data: %d:\n', data_idx);
+    fprintf(' Amplitude Reduction_1：%.2f%%\n', amplitude_reduction_ratios(data_idx, 1));
+    fprintf(' Amplitude Reduction_2: %.2f%%\n', amplitude_reduction_ratios(data_idx, 2));
+    fprintf(' Amplitude Reduction_3：%.2f%%\n', amplitude_reduction_ratios(data_idx, 3));
+    fprintf(' Amplitude Reduction_4: %.2f%%\n', amplitude_reduction_ratios(data_idx, 4));
+end
+
+text(1, amplitude_reduction_ratios(1,1), sprintf('%.1f%%', amplitude_reduction_ratios(1,1)),...
+    'VerticalAlignment','bottom','HorizontalAlignment','center');
+text(1, amplitude_reduction_ratios(1,2), sprintf('%.1f%%', amplitude_reduction_ratios(1,2)),...
+    'VerticalAlignment','top','HorizontalAlignment','center');
+text(1, amplitude_reduction_ratios(1,3), sprintf('%.1f%%', amplitude_reduction_ratios(1,3)),...
+    'VerticalAlignment','bottom','HorizontalAlignment','center');
+text(1, amplitude_reduction_ratios(1,4), sprintf('%.1f%%', amplitude_reduction_ratios(1,4)),...
+    'VerticalAlignment','top','HorizontalAlignment','center');
+
+result_table = array2table(amplitude_reduction_ratios,...
+    'VariableNames', {'0mm','1mm','2mm','3mm'},...
+    'RowNames', cellstr(strcat('Dataset_', num2str((1:4)'))));
+writetable(result_table, 'Amplitude_Reduction_Ratios.xlsx', 'WriteRowNames', true);
